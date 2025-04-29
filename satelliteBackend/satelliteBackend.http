@@ -1,0 +1,6 @@
+@satelliteBackend_HostAddress = http://localhost:5298
+
+GET {{satelliteBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
