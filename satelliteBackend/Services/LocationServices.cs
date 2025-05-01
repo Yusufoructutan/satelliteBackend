@@ -181,8 +181,11 @@ public class LocationService  : ILocationService
 
     public async Task<object> AddLocationAsync(LocationDto locationDto, int userId)
     {
-        if (locationDto.StartDate >= locationDto.EndDate)
+        if (locationDto.StartDate.Date >= locationDto.EndDate.Date)
             return new { Success = false, Message = "Başlangıç tarihi bitiş tarihinden büyük veya eşit olamaz." };
+        Console.WriteLine($"Gelen Başlangıç Tarihi: {locationDto.StartDate:yyyy-MM-dd HH:mm:ss}");
+        Console.WriteLine($"Gelen Bitiş Tarihi: {locationDto.EndDate:yyyy-MM-dd HH:mm:ss}");
+        Console.WriteLine($"Kıyas: {locationDto.StartDate.Date >= locationDto.EndDate.Date}");
 
         var location = new Location
         {

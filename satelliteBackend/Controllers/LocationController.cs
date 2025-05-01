@@ -2,6 +2,7 @@
 using MyAspNetCoreProject.Data;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 [ApiController]
@@ -151,15 +152,18 @@ public class LocationController : ControllerBase
         }
     }
 
-    // Kullanıcı ID'sini token'dan alıyoruz
     private int GetCurrentUserId()
     {
-        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "sub");
+        var userIdClaim = User.FindFirst("sub") ??
+                          User.FindFirst("userId") ??
+                          User.FindFirst(ClaimTypes.NameIdentifier);
+
         if (userIdClaim == null)
         {
             throw new UnauthorizedAccessException("Kullanıcı kimliği doğrulanamadı.");
         }
 
-        return int.Parse(userIdClaim.Value); // Kullanıcı ID'sini alıyoruz
+        return int.Parse(userIdClaim.Value);
     }
+
 }

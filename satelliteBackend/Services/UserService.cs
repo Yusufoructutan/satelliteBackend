@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using MyAspNetCoreProject.Data;
 using satelliteBackend.Models.Dto;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -56,7 +57,6 @@ public class UserService : IUserService
         var computedHash = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(password)));
         return computedHash == storedHash;
     }
-
     public string GenerateJwtToken(User user)
     {
         var key = _configuration["Jwt:Key"];
@@ -72,12 +72,22 @@ public class UserService : IUserService
         var symKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
         var creds = new SigningCredentials(symKey, SecurityAlgorithms.HmacSha256);
 
+        // ✅ CLAIMLERİ EKLİYORUZ
+        var claims = new[]
+        {
+        new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()), // en kritik: sub
+        new Claim("userId", user.UserId.ToString()),                     // opsiyonel ama iyi olur
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
+
         var token = new JwtSecurityToken(
             issuer: issuer,
             audience: audience,
+            claims: claims,                      // 👈 burada claims artık eklendi
             expires: DateTime.Now.AddMinutes(expiryInMinutes),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 }
