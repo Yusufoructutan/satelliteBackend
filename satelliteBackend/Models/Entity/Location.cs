@@ -10,6 +10,10 @@
     public int UserId { get; set; }
     public User? User { get; set; }
 
+    public string Title { get; set; }  // ✅ Eklendi
+
+
+
     public ICollection<LocationImage> Images { get; set; } = new List<LocationImage>();
 
     public ICollection<WeatherForecast> WeatherForecasts { get; set; } // burası!

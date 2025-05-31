@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyAspNetCoreProject.Data;
 using satelliteBackend.Models.Dto;
+using System.Text.Json;
 
 public class LocationService  : ILocationService
 {
@@ -161,6 +162,11 @@ public class LocationService  : ILocationService
     }
 
 
+
+
+
+
+
     public async Task<List<OpenMeteoForecastDto>> GetWeatherForecastForLocationAsync(Location location)
     {
         // Orta nokta hesapla
@@ -183,9 +189,7 @@ public class LocationService  : ILocationService
     {
         if (locationDto.StartDate.Date >= locationDto.EndDate.Date)
             return new { Success = false, Message = "Başlangıç tarihi bitiş tarihinden büyük veya eşit olamaz." };
-        Console.WriteLine($"Gelen Başlangıç Tarihi: {locationDto.StartDate:yyyy-MM-dd HH:mm:ss}");
-        Console.WriteLine($"Gelen Bitiş Tarihi: {locationDto.EndDate:yyyy-MM-dd HH:mm:ss}");
-        Console.WriteLine($"Kıyas: {locationDto.StartDate.Date >= locationDto.EndDate.Date}");
+      
 
         var location = new Location
         {
@@ -195,6 +199,7 @@ public class LocationService  : ILocationService
             NorthEastLongitude = locationDto.NorthEastLongitude,
             StartDate = locationDto.StartDate,
             EndDate = locationDto.EndDate,
+            Title = locationDto.Title,
             UserId = userId
         };
 
@@ -294,6 +299,7 @@ public class LocationService  : ILocationService
                 SouthWestLongitude = pr.Location.SouthWestLongitude,
                 NorthEastLatitude = pr.Location.NorthEastLatitude,
                 NorthEastLongitude = pr.Location.NorthEastLongitude,
+                Title = pr.Location.Title,
                 Image = image
             })
             .ToList();
@@ -315,7 +321,8 @@ public class LocationService  : ILocationService
             NorthEastLatitude = location.NorthEastLatitude,
             NorthEastLongitude = location.NorthEastLongitude,
             StartDate = location.StartDate,
-            EndDate = location.EndDate
+            EndDate = location.EndDate,
+            Title = location.Title
         };
     }
 

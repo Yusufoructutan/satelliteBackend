@@ -15,4 +15,7 @@ public class LocationDto
     [DataType(DataType.DateTime)]
     [JsonConverter(typeof(DateTimeJsonConverter))]
     public DateTime EndDate { get; set; }   // Bitiş tarihi
+
+    public string Title { get; set; }  // 🌱 Yeni alan: Kullanıcı başlık girsin
+
 }
