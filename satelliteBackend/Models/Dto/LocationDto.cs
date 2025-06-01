@@ -8,6 +8,8 @@ public class LocationDto
     public double NorthEastLatitude { get; set; } // KuzeyDoğu Enlemi
     public double NorthEastLongitude { get; set; } // KuzeyDoğu Boylamı
 
+    public string Title { get; set; } // Başlık
+
     [DataType(DataType.DateTime)]
     [JsonConverter(typeof(DateTimeJsonConverter))]
     public DateTime StartDate { get; set; } // Başlangıç tarihi
@@ -15,7 +17,4 @@ public class LocationDto
     [DataType(DataType.DateTime)]
     [JsonConverter(typeof(DateTimeJsonConverter))]
     public DateTime EndDate { get; set; }   // Bitiş tarihi
-
-    public string Title { get; set; }  // 🌱 Yeni alan: Kullanıcı başlık girsin
-
 }
