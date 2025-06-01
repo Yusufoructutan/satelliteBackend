@@ -108,6 +108,59 @@ public class LocationService  : ILocationService
                 .ToList();
         }
 
+    //public async Task<List<LocationImage>> SendToPythonService(Location location)
+    //{
+    //    var requestData = new
+    //    {
+    //        southWest = new { lat = location.SouthWestLatitude, lng = location.SouthWestLongitude },
+    //        northEast = new { lat = location.NorthEastLatitude, lng = location.NorthEastLongitude },
+    //        startDate = location.StartDate,
+    //        endDate = location.EndDate
+    //    };
+
+    //    var response = await _httpClient.PostAsJsonAsync("http://localhost:5001/process-location", requestData);
+
+    //    if (!response.IsSuccessStatusCode)
+    //    {
+    //        var errorMessage = await response.Content.ReadAsStringAsync();
+    //        Console.WriteLine("Hata Yanıtı: " + errorMessage);
+    //        throw new Exception("Python servisine istek başarısız oldu.");
+    //    }
+
+    //    var result = await response.Content.ReadFromJsonAsync<PythonResponseDto>();
+
+    //    if (result == null || result.Images == null || result.Images.Count == 0)
+    //    {
+    //        throw new Exception("Python servisi beklenen formatta veri döndürmedi.");
+    //    }
+
+    //    var locationImages = new List<LocationImage>();
+
+    //    foreach (var imageBase64 in result.Images)
+    //    {
+    //        var locationImage = new LocationImage
+    //        {
+    //            LocationId = location.Id,
+    //            ImageBase64 = imageBase64
+    //        };
+
+    //        _context.LocationImages.Add(locationImage);
+    //        locationImages.Add(locationImage);
+    //    }
+
+    //    try
+    //    {
+    //        await _context.SaveChangesAsync();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine("Veritabanına kaydederken hata oluştu: " + ex.Message);
+    //        throw;
+    //    }
+
+    //    return locationImages;
+    //}
+
     public async Task<List<LocationImage>> SendToPythonService(Location location)
     {
         var requestData = new
@@ -128,14 +181,13 @@ public class LocationService  : ILocationService
         }
 
         var result = await response.Content.ReadFromJsonAsync<PythonResponseDto>();
-
         if (result == null || result.Images == null || result.Images.Count == 0)
         {
             throw new Exception("Python servisi beklenen formatta veri döndürmedi.");
         }
 
+        // 📸 Görselleri kaydet
         var locationImages = new List<LocationImage>();
-
         foreach (var imageBase64 in result.Images)
         {
             var locationImage = new LocationImage
@@ -148,16 +200,27 @@ public class LocationService  : ILocationService
             locationImages.Add(locationImage);
         }
 
-        try
+        // 📊 Analiz verilerini kaydet
+        if (result.Analyses != null && result.Analyses.Count > 0)
         {
-            await _context.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Veritabanına kaydederken hata oluştu: " + ex.Message);
-            throw;
+            foreach (var analysis in result.Analyses)
+            {
+                var entity = new LocationAnalysis
+                {
+                    LocationId = location.Id,
+                    AnalysisDate = DateTime.Parse(analysis.Date),
+                    AverageNDVI = analysis.Average,
+                    Comment = analysis.Comment ?? "Yorum yok", // Null ise default bir metin ata
+                    Recommendation = analysis.Recommendation ?? "",
+                    DetailsJson = JsonSerializer.Serialize(analysis.Details)
+
+                };
+                _context.LocationAnalyses.Add(entity);
+            }
+
         }
 
+        await _context.SaveChangesAsync();
         return locationImages;
     }
 

@@ -13,6 +13,9 @@ namespace MyAspNetCoreProject.Data
 
         public DbSet<WeatherForecast> WeatherForecasts { get; set; }
 
+        public DbSet<LocationAnalysis> LocationAnalyses { get; set; } // ✅ Bunu ekle
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // User ve Location: Birden çoğa ilişki
@@ -35,6 +38,12 @@ namespace MyAspNetCoreProject.Data
                 .WithMany(l => l.WeatherForecasts)
                 .HasForeignKey(wf => wf.LocationId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Location>()
+        .HasMany(l => l.Analyses)
+        .WithOne(a => a.Location)
+        .HasForeignKey(a => a.LocationId)
+        .OnDelete(DeleteBehavior.Cascade);
 
             base.OnModelCreating(modelBuilder);
         }

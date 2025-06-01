@@ -12,6 +12,7 @@
 
     public string Title { get; set; }  // ✅ Eklendi
 
+    public ICollection<LocationAnalysis> Analyses { get; set; }
 
 
     public ICollection<LocationImage> Images { get; set; } = new List<LocationImage>();

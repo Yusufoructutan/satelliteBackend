@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyAspNetCoreProject.Data;
 
@@ -11,9 +12,11 @@ using MyAspNetCoreProject.Data;
 namespace satelliteBackend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250503151818_resetpass")]
+    partial class resetpass
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,42 +63,6 @@ namespace satelliteBackend.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Locations");
-                });
-
-            modelBuilder.Entity("LocationAnalysis", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AnalysisDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<double>("AverageNDVI")
-                        .HasColumnType("float");
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DetailsJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("LocationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Recommendation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LocationId");
-
-                    b.ToTable("LocationAnalyses");
                 });
 
             modelBuilder.Entity("LocationImage", b =>
@@ -156,6 +123,12 @@ namespace satelliteBackend.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpires")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordSalt")
                         .IsRequired()
@@ -221,17 +194,6 @@ namespace satelliteBackend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("LocationAnalysis", b =>
-                {
-                    b.HasOne("Location", "Location")
-                        .WithMany("Analyses")
-                        .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Location");
-                });
-
             modelBuilder.Entity("LocationImage", b =>
                 {
                     b.HasOne("Location", "Location")
@@ -267,8 +229,6 @@ namespace satelliteBackend.Migrations
 
             modelBuilder.Entity("Location", b =>
                 {
-                    b.Navigation("Analyses");
-
                     b.Navigation("Images");
 
                     b.Navigation("WeatherForecasts");
