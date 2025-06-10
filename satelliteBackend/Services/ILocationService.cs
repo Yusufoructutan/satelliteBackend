@@ -11,4 +11,7 @@ public interface ILocationService
     Task<List<ImageDto>> GetUserImagesAsync(int userId);
     Task<LocationDto> GetLocationByIdAsync(int locationId);
     Task<object> DeleteLocationAsync(int locationId, int userId);
+
+    Task<LocationDetailsResponseDto?> GetWeatherAndAnalysesByLocationId(int locationId);
+
 }

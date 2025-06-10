@@ -108,58 +108,44 @@ public class LocationService  : ILocationService
                 .ToList();
         }
 
-    //public async Task<List<LocationImage>> SendToPythonService(Location location)
-    //{
-    //    var requestData = new
-    //    {
-    //        southWest = new { lat = location.SouthWestLatitude, lng = location.SouthWestLongitude },
-    //        northEast = new { lat = location.NorthEastLatitude, lng = location.NorthEastLongitude },
-    //        startDate = location.StartDate,
-    //        endDate = location.EndDate
-    //    };
 
-    //    var response = await _httpClient.PostAsJsonAsync("http://localhost:5001/process-location", requestData);
+    public async Task<LocationDetailsResponseDto?> GetWeatherAndAnalysesByLocationId(int locationId)
+    {
+        var location = await _context.Locations
+            .Include(l => l.WeatherForecasts)
+            .Include(l => l.Analyses)
+            .FirstOrDefaultAsync(l => l.Id == locationId);
 
-    //    if (!response.IsSuccessStatusCode)
-    //    {
-    //        var errorMessage = await response.Content.ReadAsStringAsync();
-    //        Console.WriteLine("Hata Yanıtı: " + errorMessage);
-    //        throw new Exception("Python servisine istek başarısız oldu.");
-    //    }
+        if (location == null)
+            return null;
 
-    //    var result = await response.Content.ReadFromJsonAsync<PythonResponseDto>();
+        return new LocationDetailsResponseDto
+        {
+            LocationId = location.Id,
 
-    //    if (result == null || result.Images == null || result.Images.Count == 0)
-    //    {
-    //        throw new Exception("Python servisi beklenen formatta veri döndürmedi.");
-    //    }
+            WeatherForecasts = location.WeatherForecasts.Select(w => new WeatherForecastDto
+            {
+                ForecastDate = w.ForecastDate,
+                Temperature = w.Temperature,
+                WindSpeed = w.WindSpeed,
+                Humidity = w.Humidity,
+                Precipitation = w.Precipitation,
+                UvIndex = w.UvIndex,
+                WeatherDescription = w.WeatherDescription
+            }).ToList(),
 
-    //    var locationImages = new List<LocationImage>();
+            Analyses = location.Analyses.Select(a => new AnalysisDto
+            {
+                Date = a.AnalysisDate.ToString("yyyy-MM-dd"),
+                Average = a.AverageNDVI,
+                Comment = a.Comment,
+                Recommendation = a.Recommendation,
+                Details = JsonSerializer.Deserialize<Dictionary<string, AnalysisDetail>>(a.DetailsJson)
+            }).ToList()
+        };
+    }
 
-    //    foreach (var imageBase64 in result.Images)
-    //    {
-    //        var locationImage = new LocationImage
-    //        {
-    //            LocationId = location.Id,
-    //            ImageBase64 = imageBase64
-    //        };
 
-    //        _context.LocationImages.Add(locationImage);
-    //        locationImages.Add(locationImage);
-    //    }
-
-    //    try
-    //    {
-    //        await _context.SaveChangesAsync();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        Console.WriteLine("Veritabanına kaydederken hata oluştu: " + ex.Message);
-    //        throw;
-    //    }
-
-    //    return locationImages;
-    //}
 
     public async Task<List<LocationImage>> SendToPythonService(Location location)
     {
@@ -186,19 +172,27 @@ public class LocationService  : ILocationService
             throw new Exception("Python servisi beklenen formatta veri döndürmedi.");
         }
 
-        // 📸 Görselleri kaydet
         var locationImages = new List<LocationImage>();
-        foreach (var imageBase64 in result.Images)
+        var baseDate = location.StartDate;
+
+        for (int i = 0; i < result.Images.Count; i++)
         {
+            var imageBase64 = result.Images[i];
+            var imageType = i % 2 == 0 ? "RGB" : "NDVI"; // sıralamaya göre
+            var imageDate = baseDate.AddDays(i / 2); // her 2 görsel 1 güne ait
+
             var locationImage = new LocationImage
             {
                 LocationId = location.Id,
-                ImageBase64 = imageBase64
+                ImageBase64 = imageBase64,
+                ImageType = imageType,
+                ImageDate = imageDate
             };
 
             _context.LocationImages.Add(locationImage);
             locationImages.Add(locationImage);
         }
+
 
         // 📊 Analiz verilerini kaydet
         if (result.Analyses != null && result.Analyses.Count > 0)
@@ -210,24 +204,17 @@ public class LocationService  : ILocationService
                     LocationId = location.Id,
                     AnalysisDate = DateTime.Parse(analysis.Date),
                     AverageNDVI = analysis.Average,
-                    Comment = analysis.Comment ?? "Yorum yok", // Null ise default bir metin ata
+                    Comment = analysis.Comment ?? "Yorum yok",
                     Recommendation = analysis.Recommendation ?? "",
                     DetailsJson = JsonSerializer.Serialize(analysis.Details)
-
                 };
                 _context.LocationAnalyses.Add(entity);
             }
-
         }
 
         await _context.SaveChangesAsync();
         return locationImages;
     }
-
-
-
-
-
 
 
     public async Task<List<OpenMeteoForecastDto>> GetWeatherForecastForLocationAsync(Location location)
@@ -279,26 +266,23 @@ public class LocationService  : ILocationService
                 return new { Success = false, Message = "Görüntüler alınamadı." };
             }
 
-            var responseImages = new List<object>();
-            foreach (var image in imagesBase64)
+            var pythonResponse = new PythonResponse
             {
-                var pythonResponse = new PythonResponse
-                {
-                    Images = new List<string> { image.ImageBase64 },
-                    LocationId = location.Id
-                };
+                Images = imagesBase64.Select(i => i.ImageBase64).ToList(),
+                LocationId = location.Id
+            };
+            _context.PythonResponses.Add(pythonResponse);
 
-                _context.PythonResponses.Add(pythonResponse);
-                responseImages.Add(new
-                {
-                    locationId = location.Id,
-                    location.SouthWestLatitude,
-                    location.SouthWestLongitude,
-                    location.NorthEastLatitude,
-                    location.NorthEastLongitude,
-                    image = image.ImageBase64
-                });
-            }
+            var responseImages = imagesBase64.Select(image => new
+            {
+                locationId = location.Id,
+                location.SouthWestLatitude,
+                location.SouthWestLongitude,
+                location.NorthEastLatitude,
+                location.NorthEastLongitude,
+                image = image.ImageBase64
+            }).ToList();
+
 
             var forecasts = await GetWeatherForecastForLocationAsync(location);
             foreach (var forecast in forecasts)

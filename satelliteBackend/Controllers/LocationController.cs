@@ -133,6 +133,26 @@ public class LocationController : ControllerBase
             return StatusCode(500, $"Bir hata oluştu: {ex.Message}");
         }
     }
+    // 8. Lokasyonun hava durumu ve NDVI analizlerini birlikte getirme
+    [HttpGet("weather-and-analyses/{locationId}")]
+    public async Task<IActionResult> GetWeatherAndAnalysesByLocationId(int locationId)
+    {
+        try
+        {
+            var result = await _locationService.GetWeatherAndAnalysesByLocationId(locationId);
+            if (result == null)
+            {
+                return NotFound("Bu lokasyona ait hava durumu veya analiz verisi bulunamadı.");
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Bir hata oluştu: {ex.Message}");
+        }
+    }
+
 
     // 7. Tekil Lokasyon Detayı
     [HttpGet("{locationId}")]
